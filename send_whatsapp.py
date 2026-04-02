@@ -17,12 +17,26 @@ def send_images_to_contact(image_paths):
         print("Opening WhatsApp Web — please scan the QR code if prompted...")
         page.goto(WHATSAPP_WEB_URL)
 
-        # Wait for WhatsApp to load (scan QR if needed — up to 60 seconds)
-        page.wait_for_selector('div[data-testid="chat-list"]', timeout=60000)
+        # Wait up to 120 seconds for QR scan and WhatsApp to fully load
+        # Try multiple selectors to handle WhatsApp Web UI changes
+        print("Waiting for WhatsApp Web to load (you have 2 minutes to scan QR)...")
+        page.wait_for_function(
+            """() => {
+                return document.querySelector('#pane-side') !== null ||
+                       document.querySelector('div[data-testid="chat-list"]') !== null ||
+                       document.querySelector('[aria-label="Chat list"]') !== null;
+            }""",
+            timeout=120000
+        )
+        page.wait_for_timeout(2000)
         print("WhatsApp Web loaded.")
 
-        # Search for contact
-        search_box = page.locator('div[data-testid="chat-list-search"]')
+        # Search for contact using multiple selector fallbacks
+        search_box = (
+            page.locator('[data-testid="chat-list-search"]').first
+            or page.locator('[aria-label="Search input textbox"]').first
+            or page.locator('#side input').first
+        )
         search_box.click()
         search_box.type(CONTACT_NAME)
         page.wait_for_timeout(2000)
