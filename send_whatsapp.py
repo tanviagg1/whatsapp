@@ -31,18 +31,20 @@ def send_images_to_contact(image_paths):
         page.wait_for_timeout(2000)
         print("WhatsApp Web loaded.")
 
-        # Search for contact using multiple selector fallbacks
-        search_box = (
-            page.locator('[data-testid="chat-list-search"]').first
-            or page.locator('[aria-label="Search input textbox"]').first
-            or page.locator('#side input').first
-        )
+        # Search for contact — WhatsApp Web uses a contenteditable div for search
+        search_box = page.locator(
+            '#side div[contenteditable="true"], '
+            '[aria-label="Search input textbox"], '
+            '[data-testid="chat-list-search-input"]'
+        ).first
+        search_box.wait_for(timeout=15000)
         search_box.click()
         search_box.type(CONTACT_NAME)
         page.wait_for_timeout(2000)
 
         # Click on the contact
         contact = page.locator(f'span[title="{CONTACT_NAME}"]').first
+        contact.wait_for(timeout=10000)
         contact.click()
         page.wait_for_timeout(1000)
         print(f"Opened chat with {CONTACT_NAME}.")
